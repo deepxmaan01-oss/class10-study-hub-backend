@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PSEB Class 10th Smart Learning Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Gurmukhi', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .loader {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top: 3px solid #38bdf8;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- Navigation Bar -->
+  <header class="glass-card sticky top-0 z-50 px-6 py-4 flex justify-between items-center border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-extrabold text-white text-lg">10</div>
+      <div>
+        <h1 class="text-base font-bold text-slate-100">PSEB Class 10 Portal</h1>
+        <p class="text-xs text-slate-400">ਪੰਜਾਬ ਸਕੂਲ ਸਿੱਖਿਆ ਬੋਰਡ • AI ਅਧਿਐਨ ਸਹਾਇਕ</p>
+      </div>
+    </div>
+    <div id="nav-actions" class="flex items-center gap-3">
+      <button onclick="switchTab('admin-login')" class="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 transition">Admin Portal</button>
+      <div id="user-badge" class="hidden text-xs bg-sky-500/10 text-sky-400 border border-sky-500/20 px-3 py-1.5 rounded-lg font-medium"></div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl w-full mx-auto p-4 sm:p-6 flex-grow flex flex-col justify-center">
+
+    <!-- 1. REGISTRATION & VERIFICATION SCREEN -->
+    <section id="auth-screen" class="glass-card rounded-2xl p-6 sm:p-8 shadow-2xl fade-in">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white mb-2">Student Registration / ਵਿਦਿਆਰਥੀ ਰਜਿਸਟ੍ਰੇਸ਼ਨ</h2>
+        <p class="text-sm text-slate-400">Fill your profile details to access daily quizzes, PSEB tests & AI Punjabi doubt clearance.</p>
+      </div>
+
+      <div id="step-info" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name / ਪੂਰਾ ਨਾਮ</label>
+          <input type="text" id="reg-name" placeholder="Gurpreet Singh" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sky-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address / ਈਮੇਲ</label>
+          <input type="email" id="reg-email" placeholder="example@gmail.com" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sky-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">School Name / ਸਕੂਲ ਦਾ ਨਾਮ</label>
+          <input type="text" id="reg-school" placeholder="Govt. Senior Secondary School" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sky-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Preferred Medium / ਪੜ੍ਹਾਈ ਦਾ ਮਾਧਿਅਮ</label>
+          <select id="reg-medium" class="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-sky-500">
+            <option value="Punjabi">ਪੰਜਾਬੀ ਮਾਧਿਅਮ (Punjabi Medium)</option>
+            <option value="English">English Medium</option>
+          </select>
+        </div>
+        <button onclick="sendVerificationCode()" class="w-full mt-4 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-3 rounded-xl transition">Send Security Verification Code</button>
+      </div>
+
+      <!-- Verification Step -->
+      <div id="step-verify" class="space-y-4 hidden">
+        <div class="p-4 rounded-xl bg-sky-950/40 border border-sky-800/50 text-sky-200 text-xs text-center leading-relaxed">
+          A 6-digit confirmation code has been generated for verification. Enter it below to activate persistent device access.
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Enter Verification Code</label>
+          <input type="text" id="verify-code-input" placeholder="Enter 6-digit code" class="w-full text-center tracking-widest text-lg font-bold bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 focus:outline-none focus:border-sky-500">
+        </div>
+        <button onclick="confirmVerificationCode()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition">Confirm & Create Profile</button>
+      </div>
+    </section>
+
+    <!-- 2. STUDENT MAIN DASHBOARD -->
+    <section id="dashboard-screen" class="hidden space-y-6 fade-in">
+      <!-- Roadmap Banner -->
+      <div class="glass-card rounded-2xl p-6 border-l-4 border-l-sky-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white">10th Class Academic Roadmap (PSEB)</h2>
+          <p class="text-xs text-slate-400 mt-1">Complete daily quizzes, submit subjective answers for AI checking, and clear doubts.</p>
+        </div>
+        <button onclick="logoutStudent()" class="text-xs text-rose-400 hover:underline">Log Out</button>
+      </div>
+
+      <!-- Tab Navigator -->
+      <div class="flex gap-2 overflow-x-auto pb-2">
+        <button onclick="switchPortalTab('quiz')" id="tab-btn-quiz" class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition bg-sky-500 text-slate-950">Daily AI Quiz</button>
+        <button onclick="switchPortalTab('written')" id="tab-btn-written" class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition bg-slate-800 text-slate-300">Subject Written Test</button>
+        <button onclick="switchPortalTab('doubts')" id="tab-btn-doubts" class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition bg-slate-800 text-slate-300">ਪੰਜਾਬੀ Doubt Solver</button>
+      </div>
+
+      <!-- TAB 1: DAILY QUIZ -->
+      <div id="tab-quiz" class="glass-card rounded-2xl p-6 space-y-5">
+        <div class="flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-white">Daily Subject Assessment</h3>
+            <p class="text-xs text-slate-400">Questions update dynamically each day based on official PSEB syllabus</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs text-slate-300">Quiz Language:</label>
+            <select id="quiz-lang-select" class="bg-slate-800 border border-slate-700 rounded-lg text-xs px-3 py-1.5">
+              <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi)</option>
+              <option value="English">English</option>
+            </select>
+            <button onclick="generateDailyQuiz()" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs">Load Today's Quiz</button>
+          </div>
+        </div>
+
+        <div id="quiz-loader" class="hidden text-center py-10">
+          <div class="loader mb-2"></div>
+          <p class="text-xs text-slate-400">Gemini is curating today's board questions...</p>
+        </div>
+
+        <div id="quiz-container" class="space-y-4"></div>
+
+        <button id="quiz-submit-btn" onclick="submitQuizAnswers()" class="hidden w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition">Submit Quiz Answers</button>
+        <div id="quiz-result" class="hidden p-4 rounded-xl bg-slate-800 border border-slate-700 text-center font-bold text-sm"></div>
+      </div>
+
+      <!-- TAB 2: WRITTEN TEST & IMAGE CHECKING -->
+      <div id="tab-written" class="glass-card rounded-2xl p-6 space-y-5 hidden">
+        <div>
+          <h3 class="text-lg font-bold text-white">PSEB Written Subject Test</h3>
+          <p class="text-xs text-slate-400">Select your subject, read the question, write the solution on your copy, and upload the photo for AI checking.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Subject</label>
+            <select id="written-subject" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs">
+              <option value="Science (ਵਿਗਿਆਨ)">Science (ਵਿਗਿਆਨ)</option>
+              <option value="Mathematics (ਗਣਿਤ)">Mathematics (ਗਣਿਤ)</option>
+              <option value="Social Studies (ਸਮਾਜਿਕ ਸਿੱਖਿਆ)">Social Studies (ਸਮਾਜਿਕ ਸਿੱਖਿਆ)</option>
+              <option value="English">English</option>
+              <option value="Punjabi (ਪੰਜਾਬੀ)">Punjabi (ਪੰਜਾਬੀ)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Answer Medium</label>
+            <select id="written-medium" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs">
+              <option value="Punjabi">ਪੰਜਾਬੀ (Punjabi Medium)</option>
+              <option value="English">English Medium</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="getWrittenQuestion()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-xl text-xs">Get Board Exam Question</button>
+
+        <div id="written-question-display" class="hidden p-4 rounded-xl bg-slate-800/90 border border-slate-700">
+          <span class="text-[10px] font-bold tracking-wider text-sky-400 uppercase">Question Paper</span>
+          <p id="written-question-text" class="text-sm font-semibold text-slate-100 mt-1"></p>
+        </div>
+
+        <div class="border-2 border-dashed border-slate-700 rounded-2xl p-6 text-center space-y-3">
+          <input type="file" id="answer-image-file" accept="image/*" class="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-500 file:text-slate-950 hover:file:bg-sky-400">
+          <p class="text-xs text-slate-500">Upload a clear photo of your handwritten paper</p>
+        </div>
+
+        <button onclick="evaluateWrittenAnswer()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-3 rounded-xl transition">Submit Answer Copy for Evaluation</button>
+
+        <div id="written-loader" class="hidden text-center py-6">
+          <div class="loader mb-2"></div>
+          <p class="text-xs text-slate-400">AI is reading handwriting & grading according to PSEB criteria...</p>
+        </div>
+
+        <div id="written-feedback" class="hidden p-5 rounded-xl bg-slate-800/90 border border-slate-700 space-y-2 text-xs leading-relaxed text-slate-200"></div>
+      </div>
+
+      <!-- TAB 3: PUNJABI DOUBT CLEARANCE -->
+      <div id="tab-doubts" class="glass-card rounded-2xl p-6 space-y-4 hidden">
+        <div>
+          <h3 class="text-lg font-bold text-white">ਪੰਜਾਬੀ Doubt Solver (24/7 AI ਅਧਿਆਪਕ)</h3>
+          <p class="text-xs text-slate-400">Ask any PSEB syllabus question in Punjabi or English. You will receive an explanation in simple Punjabi.</p>
+        </div>
+
+        <div class="space-y-2">
+          <textarea id="doubt-input" rows="3" placeholder="ਆਪਣਾ ਸਵਾਲ ਇੱਥੇ ਲਿਖੋ (ਜਿਵੇਂ: ਪ੍ਰਕਾਸ਼ ਦਾ ਪਰਿਵਰਤਨ ਕੀ ਹੈ? ਜਾਂ ਦੋ ਘਾਤੀ ਸਮੀਕਰਨ ਕਿਵੇਂ ਹੱਲ ਕਰੀਏ?)..." class="w-full bg-slate-800/80 border border-slate-700 rounded-xl p-3 text-xs focus:outline-none focus:border-sky-500 text-white"></textarea>
+          <button onclick="resolveDoubt()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition">Ask Doubt / ਸ਼ੰਕਾ ਦੂਰ ਕਰੋ</button>
+        </div>
+
+        <div id="doubt-loader" class="hidden text-center py-4">
+          <div class="loader mb-2"></div>
+          <p class="text-xs text-slate-400">ਅਧਿਆਪਕ ਜਵਾਬ ਤਿਆਰ ਕਰ ਰਹੇ ਹਨ...</p>
+        </div>
+
+        <div id="doubt-output" class="hidden p-4 rounded-xl bg-slate-800/90 border border-slate-700 text-xs text-slate-200 leading-relaxed"></div>
+      </div>
+    </section>
+
+    <!-- 3. ADMIN PORTAL SCREEN -->
+    <section id="admin-screen" class="glass-card rounded-2xl p-6 sm:p-8 space-y-6 hidden fade-in">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+        <div>
+          <h2 class="text-xl font-bold text-white">Admin Dashboard & Analytics</h2>
+          <p class="text-xs text-slate-400">Class 10th Student Academic Reports & Assessment Records</p>
+        </div>
+        <button onclick="switchTab('dashboard')" class="text-xs text-sky-400 hover:underline">Back to Student Portal</button>
+      </div>
+
+      <!-- Admin Login Form -->
+      <div id="admin-login-box" class="space-y-4 max-w-sm mx-auto py-6">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Admin Email</label>
+          <input type="email" id="admin-email" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
+          <input type="password" id="admin-pass" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs">
+        </div>
+        <button onclick="authenticateAdmin()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Login to Admin Portal</button>
+      </div>
+
+      <!-- Admin Data View -->
+      <div id="admin-data-view" class="space-y-6 hidden">
+        <!-- Quick Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700">
+            <span class="text-xs text-slate-400">Registered Students</span>
+            <div id="stat-total-students" class="text-2xl font-bold text-sky-400 mt-1">0</div>
+          </div>
+          <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700">
+            <span class="text-xs text-slate-400">Tests Evaluated</span>
+            <div id="stat-tests-done" class="text-2xl font-bold text-emerald-400 mt-1">0</div>
+          </div>
+          <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700">
+            <span class="text-xs text-slate-400">Avg Medium Split</span>
+            <div id="stat-medium-analysis" class="text-sm font-semibold text-slate-200 mt-1">Punjabi: 0 | Eng: 0</div>
+          </div>
+        </div>
+
+        <!-- Student Records Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border border-slate-800">
+            <thead class="bg-slate-800/90 text-slate-300 uppercase font-semibold text-[10px] tracking-wider">
+              <tr>
+                <th class="p-3">Student Name</th>
+                <th class="p-3">Email</th>
+                <th class="p-3">School</th>
+                <th class="p-3">Medium</th>
+                <th class="p-3">Last Quiz</th>
+                <th class="p-3">Written Test Score</th>
+              </tr>
+            </thead>
+            <tbody id="admin-table-body" class="divide-y divide-slate-800 text-slate-300">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="text-center py-4 text-xs text-slate-500 border-t border-slate-800/50">
+    © 2026 PSEB 10th Class Dedicated Study Engine • Ready for GitHub Pages
+  </footer>
+
+  <script>
+    // --- GEMINI & FIREBASE SETUP ---
+    const GEMINI_API_KEY = "AIzaSyAMMPZQuJpBFt-JrQpKRnCJYyp5hoVBuK4";
+    const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    const firebaseConfig = {
+      apiKey: GEMINI_API_KEY,
+      authDomain: "pseb-class-10.firebaseapp.com",
+      projectId: "pseb-class-10",
+      storageBucket: "pseb-class-10.appspot.com",
+      messagingSenderId: "100000000000",
+      appId: "1:100000000000:web:abcdef123456"
+    };
+
+    let db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      console.warn("Firestore running in mock/offline mode.");
+    }
+
+    // --- STATE MANAGEMENT ---
+    let currentUser = JSON.parse(localStorage.getItem("pseb_10th_user") || "null");
+    let generatedOtp = null;
+    let tempUserData = null;
+    let currentQuizData = [];
+
+    // --- INITIALIZATION ---
+    window.addEventListener("DOMContentLoaded", () => {
+      if (currentUser && currentUser.verified) {
+        showDashboard();
+      } else {
+        switchTab("auth");
+      }
+    });
+
+    function switchTab(view) {
+      document.getElementById("auth-screen").classList.add("hidden");
+      document.getElementById("dashboard-screen").classList.add("hidden");
+      document.getElementById("admin-screen").classList.add("hidden");
+
+      if (view === "auth") document.getElementById("auth-screen").classList.remove("hidden");
+      if (view === "dashboard") document.getElementById("dashboard-screen").classList.remove("hidden");
+      if (view === "admin-login") document.getElementById("admin-screen").classList.remove("hidden");
+    }
+
+    function switchPortalTab(tab) {
+      ["quiz", "written", "doubts"].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add("hidden");
+        document.getElementById(`tab-btn-${t}`).className = "flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition bg-slate-800 text-slate-300";
+      });
+      document.getElementById(`tab-${tab}`).classList.remove("hidden");
+      document.getElementById(`tab-btn-${tab}`).className = "flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold transition bg-sky-500 text-slate-950";
+    }
+
+    // --- VERIFICATION FLOW (Persistent One-Time Code) ---
+    function sendVerificationCode() {
+      const name = document.getElementById("reg-name").value.trim();
+      const email = document.getElementById("reg-email").value.trim();
+      const school = document.getElementById("reg-school").value.trim();
+      const medium = document.getElementById("reg-medium").value;
+
+      if (!name || !email || !school) {
+        alert("Please complete all fields / ਕਿਰਪਾ ਕਰਕੇ ਸਾਰੀ ਜਾਣਕਾਰੀ ਭਰੋ");
+        return;
+      }
+
+      generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      tempUserData = { name, email, school, medium, verified: false };
+
+      // Dispatch alert simulating the email delivery system
+      alert(`[Verification Service]\nYour one-time security confirmation code for ${email} is:\n\n${generatedOtp}\n\nEnter this code to permanently activate this device.`);
+      
+      document.getElementById("step-info").classList.add("hidden");
+      document.getElementById("step-verify").classList.remove("hidden");
+    }
+
+    function confirmVerificationCode() {
+      const enteredCode = document.getElementById("verify-code-input").value.trim();
+      if (enteredCode === generatedOtp) {
+        tempUserData.verified = true;
+        currentUser = tempUserData;
+        localStorage.setItem("pseb_10th_user", JSON.stringify(currentUser));
+
+        // Save student record to local array or Firestore for admin retrieval
+        saveStudentRecord(currentUser);
+
+        showDashboard();
+      } else {
+        alert("Invalid security code. Please check and re-enter.");
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById("user-badge").textContent = `${currentUser.name} (${currentUser.medium})`;
+      document.getElementById("user-badge").classList.remove("hidden");
+      switchTab("dashboard");
+      switchPortalTab("quiz");
+    }
+
+    function logoutStudent() {
+      localStorage.removeItem("pseb_10th_user");
+      currentUser = null;
+      location.reload();
+    }
+
+    // --- GEMINI REST CALL HELPER ---
+    async function callGemini(contents) {
+      const res = await fetch(GEMINI_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents })
+      });
+      const data = await res.json();
+      return data.candidates[0].content.parts[0].text;
+    }
+
+    // --- TAB 1: DAILY UNIQUE PSEB QUIZ ---
+    async function generateDailyQuiz() {
+      const lang = document.getElementById("quiz-lang-select").value;
+      const dateKey = new Date().toISOString().slice(0, 10);
+      const loader = document.getElementById("quiz-loader");
+      const container = document.getElementById("quiz-container");
+      const submitBtn = document.getElementById("quiz-submit-btn");
+
+      loader.classList.remove("hidden");
+      container.innerHTML = "";
+      submitBtn.classList.add("hidden");
+      document.getElementById("quiz-result").classList.add("hidden");
+
+      const prompt = `You are a Punjab School Education Board (PSEB) Class 10 exam maker.
+Generate 3 distinct multiple-choice questions for today's test (${dateKey}) covering Science, Mathematics, or Social Science.
+Language requested: ${lang}.
+Return ONLY valid JSON matching this schema:
+[
+  {
+    "question": "Question text here",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correctIndex": 0
+  }
+]`;
+
+      try {
+        const responseText = await callGemini([{ parts: [{ text: prompt }] }]);
+        const cleanJson = responseText.replace(/```json|```/g, "").trim();
+        currentQuizData = JSON.parse(cleanJson);
+
+        container.innerHTML = currentQuizData.map((item, qIdx) => `
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 space-y-3">
+            <p class="text-sm font-semibold text-slate-100">${qIdx + 1}. ${item.question}</p>
+            <div class="space-y-2">
+              ${item.options.map((opt, oIdx) => `
+                <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer p-2 rounded-lg hover:bg-slate-700/50">
+                  <input type="radio" name="q_${qIdx}" value="${oIdx}" class="text-sky-500">
+                  <span>${opt}</span>
+                </label>
+              `).join("")}
+            </div>
+          </div>
+        `).join("");
+
+        submitBtn.classList.remove("hidden");
+      } catch (err) {
+        container.innerHTML = `<p class="text-xs text-rose-400">Failed to load quiz. Please check internet connection and try again.</p>`;
+      } finally {
+        loader.classList.add("hidden");
+      }
+    }
+
+    function submitQuizAnswers() {
+      let score = 0;
+      currentQuizData.forEach((q, idx) => {
+        const selected = document.querySelector(`input[name="q_${idx}"]:checked`);
+        if (selected && parseInt(selected.value) === q.correctIndex) {
+          score++;
+        }
+      });
+
+      const resBox = document.getElementById("quiz-result");
+      resBox.textContent = `Today's Score: ${score} / ${currentQuizData.length} marks recorded!`;
+      resBox.className = "p-4 rounded-xl bg-sky-950/60 border border-sky-600 text-sky-200 text-center font-bold text-sm";
+      resBox.classList.remove("hidden");
+
+      updateStudentScore("quiz", `${score}/${currentQuizData.length}`);
+    }
+
+    // --- TAB 2: WRITTEN TEST & IMAGE CHECKING ---
+    async function getWrittenQuestion() {
+      const subject = document.getElementById("written-subject").value;
+      const medium = document.getElementById("written-medium").value;
+      const display = document.getElementById("written-question-display");
+      const textElem = document.getElementById("written-question-text");
+
+      textElem.textContent = "Loading official PSEB question...";
+      display.classList.remove("hidden");
+
+      const prompt = `Give me exactly ONE 3-mark or 4-mark board exam written question for Punjab School Education Board (PSEB) Class 10.
+Subject: ${subject}
+Language: ${medium}.
+Provide solely the question statement directly with no pleasantries.`;
+
+      try {
+        const question = await callGemini([{ parts: [{ text: prompt }] }]);
+        textElem.textContent = question.trim();
+      } catch (e) {
+        textElem.textContent = "Error generating question. Please click again.";
+      }
+    }
+
+    async function evaluateWrittenAnswer() {
+      const fileInput = document.getElementById("answer-image-file");
+      const questionText = document.getElementById("written-question-text").textContent;
+      const loader = document.getElementById("written-loader");
+      const feedbackElem = document.getElementById("written-feedback");
+
+      if (!fileInput.files[0]) {
+        alert("Please upload a photo of your handwritten answer sheet first.");
+        return;
+      }
+      if (!questionText) {
+        alert("Please generate a test question first.");
+        return;
+      }
+
+      loader.classList.remove("hidden");
+      feedbackElem.classList.add("hidden");
+
+      const file = fileInput.files[0];
+      const base64Data = await new Promise((res) => {
+        const reader = new FileReader();
+        reader.onload = () => res(reader.result.split(",")[1]);
+        reader.readAsDataURL(file);
+      });
+
+      const prompt = `You are a certified Punjab School Education Board (PSEB) Class 10 paper checker.
+Question asked: "${questionText}".
+Examine the student's handwritten answer sheet in the uploaded image.
+Provide:
+1. Marks Awarded (out of 5).
+2. Step-by-step Evaluation & Corrections.
+3. Constructive feedback in Punjabi (or bilingual English/Punjabi) so the student learns the standard board presentation.`;
+
+      try {
+        const response = await callGemini([
+          {
+            parts: [
+              { text: prompt },
+              {
+                inline_data: {
+                  mime_type: file.type || "image/jpeg",
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ]);
+
+        feedbackElem.innerHTML = `<h4 class="font-bold text-sky-400 mb-2">Teacher Evaluation Result:</h4>` +
+          response.replace(/\n/g, "<br>");
+        feedbackElem.classList.remove("hidden");
+
+        const marksMatch = response.match(/(\d(\.\d)?)\s*\/\s*5/);
+        const marksStr = marksMatch ? `${marksMatch[1]}/5` : "Checked";
+        updateStudentScore("written", marksStr);
+      } catch (err) {
+        alert("Error grading image. Ensure the image is clear and under 4MB.");
+      } finally {
+        loader.classList.add("hidden");
+      }
+    }
+
+    // --- TAB 3: PUNJABI DOUBT SOLVER ---
+    async function resolveDoubt() {
+      const query = document.getElementById("doubt-input").value.trim();
+      const loader = document.getElementById("doubt-loader");
+      const output = document.getElementById("doubt-output");
+
+      if (!query) return;
+
+      loader.classList.remove("hidden");
+      output.classList.add("hidden");
+
+      const prompt = `You are a friendly, encouraging school teacher for PSEB Class 10 students.
+Explain the following academic concept/doubt clearly and accurately in simple, pure Gurmukhi Punjabi (ਪੰਜਾਬੀ).
+Include practical everyday examples and formulas if applicable.
+
+Student's Query: "${query}"`;
+
+      try {
+        const ans = await callGemini([{ parts: [{ text: prompt }] }]);
+        output.innerHTML = ans.replace(/\n/g, "<br>");
+        output.classList.remove("hidden");
+      } catch (e) {
+        output.innerHTML = `<span class="text-rose-400">ਸ਼ੰਕਾ ਹੱਲ ਕਰਨ ਵਿੱਚ ਸਮੱਸਿਆ ਆਈ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</span>`;
+        output.classList.remove("hidden");
+      } finally {
+        loader.classList.add("hidden");
+      }
+    }
+
+    // --- LOCAL / FIRESTORE DATA PERSISTENCE ---
+    function saveStudentRecord(user) {
+      let records = JSON.parse(localStorage.getItem("pseb_all_students") || "[]");
+      const idx = records.findIndex(r => r.email === user.email);
+      if (idx > -1) {
+        records[idx] = { ...records[idx], ...user };
+      } else {
+        records.push({ ...user, lastQuiz: "Not taken", writtenScore: "Pending" });
+      }
+      localStorage.setItem("pseb_all_students", JSON.stringify(records));
+
+      if (db) {
+        db.collection("students").doc(user.email).set(user, { merge: true }).catch(() => {});
+      }
+    }
+
+    function updateStudentScore(type, val) {
+      if (!currentUser) return;
+      let records = JSON.parse(localStorage.getItem("pseb_all_students") || "[]");
+      const idx = records.findIndex(r => r.email === currentUser.email);
+      if (idx > -1) {
+        if (type === "quiz") records[idx].lastQuiz = val;
+        if (type === "written") records[idx].writtenScore = val;
+        localStorage.setItem("pseb_all_students", JSON.stringify(records));
+      }
+    }
+
+    // --- ADMIN AUTH & ANALYTICS VIEW ---
+    function authenticateAdmin() {
+      const email = document.getElementById("admin-email").value.trim();
+      const pass = document.getElementById("admin-pass").value.trim();
+
+      if (email === "deepxmaan01@gmail.com" && pass === "deep@2012") {
+        document.getElementById("admin-login-box").classList.add("hidden");
+        document.getElementById("admin-data-view").classList.remove("hidden");
+        loadAdminAnalytics();
+      } else {
+        alert("Invalid Admin Credentials.");
+      }
+    }
+
+    function loadAdminAnalytics() {
+      const records = JSON.parse(localStorage.getItem("pseb_all_students") || "[]");
+      document.getElementById("stat-total-students").textContent = records.length;
+
+      let evaluatedCount = 0;
+      let punjabiMediumCount = 0;
+      let englishMediumCount = 0;
+
+      const tbody = document.getElementById("admin-table-body");
+      tbody.innerHTML = "";
+
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No student profiles registered yet.</td></tr>`;
+        return;
+      }
+
+      records.forEach(r => {
+        if (r.writtenScore && r.writtenScore !== "Pending") evaluatedCount++;
+        if (r.medium === "Punjabi") punjabiMediumCount++;
+        else englishMediumCount++;
+
+        const row = `
+          <tr class="hover:bg-slate-800/40">
+            <td class="p-3 font-semibold text-white">${r.name}</td>
+            <td class="p-3 text-slate-400">${r.email}</td>
+            <td class="p-3">${r.school}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${r.medium === 'Punjabi' ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}">${r.medium}</span></td>
+            <td class="p-3">${r.lastQuiz || 'N/A'}</td>
+            <td class="p-3 font-semibold text-emerald-400">${r.writtenScore || 'Pending'}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+
+      document.getElementById("stat-tests-done").textContent = evaluatedCount;
+      document.getElementById("stat-medium-analysis").textContent = `Punjabi: ${punjabiMediumCount} | English: ${englishMediumCount}`;
+    }
+  </script>
+</body>
+</html>
